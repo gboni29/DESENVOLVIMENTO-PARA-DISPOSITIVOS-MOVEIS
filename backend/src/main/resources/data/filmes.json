@@ -1,0 +1,22 @@
+[
+  {
+    "id": "f1",
+    "titulo": "Inception",
+    "diretor": "Christopher Nolan",
+    "anoLancamento": 2010,
+    "generos": ["Ficção Científica", "Ação"],
+    "sinopse": "Um ladrão especialista em roubar segredos do subconsciente recebe uma missão impossível.",
+    "posterUrl": "https://image.tmdb.org/t/p/w500/9gk7adHYeDvHkCSEqAvQNLV5Uge.jpg",
+    "duracaoMinutos": 148
+  },
+  {
+    "id": "f2",
+    "titulo": "Interstellar",
+    "diretor": "Christopher Nolan",
+    "anoLancamento": 2014,
+    "generos": ["Ficção Científica", "Drama"],
+    "sinopse": "Exploradores viajam por um buraco de minhoca no espaço em busca de um novo lar para a humanidade.",
+    "posterUrl": "https://image.tmdb.org/t/p/w500/gEU2QniE6E77NI6lCU6MxlNBvIx.jpg",
+    "duracaoMinutos": 169
+  }
+]
