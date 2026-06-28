@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { FlatList, Image, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { useEffect, useRef, useState } from 'react';
+import { Animated, FlatList, Image, Modal, Pressable, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
@@ -55,9 +55,69 @@ function Estrelas({ nota }: { nota: number }) {
 export default function ProfileScreen() {
   const router = useRouter();
   const [editando, setEditando] = useState(false);
+  const [configAberto, setConfigAberto] = useState(false);
+  const [modalVisivel, setModalVisivel] = useState(false);
+  const slideAnim = useRef(new Animated.Value(400)).current;
+  const fadeAnim  = useRef(new Animated.Value(0)).current;
+
+  function abrirConfig() {
+    setModalVisivel(true);
+    setConfigAberto(true);
+    Animated.parallel([
+      Animated.spring(slideAnim, { toValue: 0, useNativeDriver: true, damping: 20, stiffness: 180 }),
+      Animated.timing(fadeAnim,  { toValue: 1, duration: 220, useNativeDriver: true }),
+    ]).start();
+  }
+
+  function fecharConfig() {
+    Animated.parallel([
+      Animated.timing(slideAnim, { toValue: 400, duration: 260, useNativeDriver: true }),
+      Animated.timing(fadeAnim,  { toValue: 0,   duration: 200, useNativeDriver: true }),
+    ]).start(() => { setModalVisivel(false); setConfigAberto(false); });
+  }
 
   return (
     <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
+
+      {/* Modal de configurações */}
+      <Modal visible={modalVisivel} transparent statusBarTranslucent onRequestClose={fecharConfig}>
+        <Animated.View style={[styles.modalOverlay, { opacity: fadeAnim }]}>
+          <Pressable style={{ flex: 1 }} onPress={fecharConfig} />
+        </Animated.View>
+        <Animated.View style={[styles.modalSheet, { transform: [{ translateY: slideAnim }] }]}>
+          <View style={styles.modalHandle} />
+          <Text style={styles.modalTitulo}>Configurações</Text>
+
+          <View style={styles.menuContainer}>
+            {[
+              { icon: 'notifications-outline', label: 'Notificações', sub: 'Gerencie seus alertas' },
+              { icon: 'shield-outline',        label: 'Privacidade',  sub: 'Controle seus dados' },
+              { icon: 'help-circle-outline',   label: 'Ajuda',        sub: 'Dúvidas e suporte' },
+            ].map((item) => (
+              <TouchableOpacity key={item.label} style={styles.menuItem}>
+                <View style={styles.menuIconWrap}>
+                  <Ionicons name={item.icon as any} size={20} color="#c9973a" />
+                </View>
+                <View style={styles.menuTextos}>
+                  <Text style={styles.menuItemText}>{item.label}</Text>
+                  <Text style={styles.menuItemSub}>{item.sub}</Text>
+                </View>
+                <Ionicons name="chevron-forward" size={16} color="#2e2b45" />
+              </TouchableOpacity>
+            ))}
+          </View>
+
+          <TouchableOpacity style={styles.menuItemSair} onPress={() => { fecharConfig(); setTimeout(() => router.replace('/login'), 300); }}>
+            <View style={styles.menuIconWrapSair}>
+              <Ionicons name="log-out-outline" size={20} color="#7a2020" />
+            </View>
+            <View style={styles.menuTextos}>
+              <Text style={styles.menuItemSairText}>Sair da conta</Text>
+              <Text style={styles.menuItemSairSub}>Encerrar sessão atual</Text>
+            </View>
+          </TouchableOpacity>
+        </Animated.View>
+      </Modal>
 
       {/* Header do perfil */}
       <View style={styles.heroContainer}>
@@ -92,6 +152,11 @@ export default function ProfileScreen() {
             <Text style={styles.editarPerfilText}>Editar perfil</Text>
           </TouchableOpacity>
         </View>
+
+        {/* Engrenagem */}
+        <TouchableOpacity style={styles.configBtn} onPress={abrirConfig}>
+          <Ionicons name="settings-outline" size={20} color="#6b6585" />
+        </TouchableOpacity>
       </View>
 
       {/* Estatísticas */}
@@ -176,41 +241,6 @@ export default function ProfileScreen() {
         </View>
       </View>
 
-      <View style={styles.divider} />
-
-      {/* Ações da conta */}
-      <View style={styles.section}>
-        <Text style={styles.sectionLabel}>Conta</Text>
-
-        <View style={styles.menuContainer}>
-          {[
-            { icon: 'notifications-outline', label: 'Notificações',  sub: 'Gerencie seus alertas' },
-            { icon: 'shield-outline',        label: 'Privacidade',   sub: 'Controle seus dados' },
-            { icon: 'help-circle-outline',   label: 'Ajuda',         sub: 'Dúvidas e suporte' },
-          ].map((item) => (
-            <TouchableOpacity key={item.label} style={styles.menuItem}>
-              <View style={styles.menuIconWrap}>
-                <Ionicons name={item.icon as any} size={20} color="#c9973a" />
-              </View>
-              <View style={styles.menuTextos}>
-                <Text style={styles.menuItemText}>{item.label}</Text>
-                <Text style={styles.menuItemSub}>{item.sub}</Text>
-              </View>
-              <Ionicons name="chevron-forward" size={16} color="#2e2b45" />
-            </TouchableOpacity>
-          ))}
-        </View>
-
-        <TouchableOpacity style={styles.menuItemSair}>
-          <View style={styles.menuIconWrapSair}>
-            <Ionicons name="log-out-outline" size={20} color="#7a2020" />
-          </View>
-          <View style={styles.menuTextos}>
-            <Text style={styles.menuItemSairText}>Sair da conta</Text>
-            <Text style={styles.menuItemSairSub}>Encerrar sessão atual</Text>
-          </View>
-        </TouchableOpacity>
-      </View>
 
       <View style={{ height: 56 }} />
     </ScrollView>
@@ -296,6 +326,31 @@ const styles = StyleSheet.create({
   topFilmePoster: { width: '100%', height: 130, borderRadius: 8, marginBottom: 6 },
   topFilmeTitulo: { fontSize: 12, fontWeight: '700', color: '#d4cfe8', textAlign: 'center', lineHeight: 16 },
   topFilmeAno: { fontSize: 11, color: '#4f4a6a', marginTop: 2 },
+
+  // Engrenagem
+  configBtn: {
+    position: 'absolute', top: 52, right: 20,
+    backgroundColor: 'rgba(13,13,20,0.5)', borderRadius: 20, padding: 8,
+    borderWidth: 1, borderColor: '#2e2b45',
+  },
+
+  // Modal
+  modalOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(0,0,0,0.65)',
+  },
+  modalSheet: {
+    position: 'absolute', bottom: 0, left: 0, right: 0,
+    backgroundColor: '#12101f', borderTopLeftRadius: 28, borderTopRightRadius: 28,
+    padding: 24, paddingBottom: 48,
+    borderWidth: 1, borderColor: '#1e1b30',
+    shadowColor: '#000', shadowOffset: { width: 0, height: -8 }, shadowOpacity: 0.5, shadowRadius: 20,
+  },
+  modalHandle: {
+    width: 40, height: 4, borderRadius: 2, backgroundColor: '#2e2b45',
+    alignSelf: 'center', marginBottom: 20,
+  },
+  modalTitulo: { fontSize: 18, fontWeight: '800', color: '#f0eaff', marginBottom: 20 },
 
   // Menu conta
   menuContainer: { gap: 10, marginBottom: 12 },
