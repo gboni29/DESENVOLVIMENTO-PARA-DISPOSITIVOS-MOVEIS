@@ -5,9 +5,12 @@ import {
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
+import { cadastrarApi } from '../services/api';
+import { useAuth } from '../context/AuthContext';
 
 export default function CadastroScreen() {
   const router = useRouter();
+  const { salvarSessao } = useAuth();
   const [nome, setNome] = useState('');
   const [email, setEmail] = useState('');
   const [senha, setSenha] = useState('');
@@ -32,16 +35,20 @@ export default function CadastroScreen() {
     return '';
   }
 
-  function criar() {
+  async function criar() {
     const msg = validar();
     if (msg) { setErro(msg); return; }
     setErro('');
     setCarregando(true);
-    // Simula chamada ao backend — substituir por fetch real
-    setTimeout(() => {
-      setCarregando(false);
+    try {
+      const usuario = await cadastrarApi({ nome: nome.trim(), email: email.trim(), senha });
+      await salvarSessao(usuario);
       router.replace('/(tabs)/home');
-    }, 900);
+    } catch (e: any) {
+      setErro(e.message ?? 'Erro ao criar conta.');
+    } finally {
+      setCarregando(false);
+    }
   }
 
   const f = forca();

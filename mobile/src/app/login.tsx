@@ -1,12 +1,16 @@
 import { useState } from 'react';
 import {
-  KeyboardAvoidingView, Platform, Pressable, ScrollView,
+  KeyboardAvoidingView, Platform, ScrollView,
   StyleSheet, Text, TextInput, TouchableOpacity, View,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
+import { loginApi } from '../services/api';
+import { useAuth } from '../context/AuthContext';
+
 
 export default function LoginScreen() {
+  const { salvarSessao } = useAuth();
   const router = useRouter();
   const [email, setEmail] = useState('');
   const [senha, setSenha] = useState('');
@@ -22,16 +26,20 @@ export default function LoginScreen() {
     return '';
   }
 
-  function entrar() {
+  async function entrar() {
     const msg = validar();
     if (msg) { setErro(msg); return; }
     setErro('');
     setCarregando(true);
-    // Simula chamada ao backend — substituir por fetch real
-    setTimeout(() => {
-      setCarregando(false);
+    try {
+      const usuario = await loginApi({ email: email.trim(), senha });
+      await salvarSessao(usuario);
       router.replace('/(tabs)/home');
-    }, 800);
+    } catch (e: any) {
+      setErro(e.message ?? 'Erro ao conectar com o servidor.');
+    } finally {
+      setCarregando(false);
+    }
   }
 
   return (

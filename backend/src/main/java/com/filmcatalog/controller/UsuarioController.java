@@ -8,6 +8,9 @@ import org.springframework.web.bind.annotation.*;
 import java.io.IOException;
 import java.util.List;
 
+import java.util.Optional;
+
+
 @RestController
 @RequestMapping("/api/usuarios")
 public class UsuarioController {
@@ -45,5 +48,45 @@ public class UsuarioController {
     public ResponseEntity<Void> deletar(@PathVariable String id) throws IOException {
         usuarioService.deletar(id);
         return ResponseEntity.noContent().build();
+    }
+
+    @PostMapping("/login")
+    public ResponseEntity<?> login(@RequestBody java.util.Map<String, String> body) throws IOException {
+        String email = body.get("email");
+        String senha = body.get("senha");
+
+        java.util.Optional<Usuario> opt = usuarioService.buscarPorEmail(email);
+        if (opt.isEmpty()) {
+            return ResponseEntity.status(401).body("E-mail ou senha inválidos.");
+        }
+
+        Usuario u = opt.get();
+        if (!senha.equals(u.getSenhaCriptografada())) {
+            return ResponseEntity.status(401).body("E-mail ou senha inválidos.");
+        }
+
+        u.setSenhaCriptografada(null);
+        return ResponseEntity.ok(u);
+    }
+
+    @PostMapping("/cadastro")
+    public ResponseEntity<?> cadastro(@RequestBody java.util.Map<String, String> body) throws IOException {
+        String email = body.get("email");
+
+        if (usuarioService.buscarPorEmail(email).isPresent()) {
+            return ResponseEntity.status(409).body("E-mail já cadastrado.");
+        }
+
+        Usuario novo = new Usuario();
+        novo.setId(java.util.UUID.randomUUID().toString());
+        novo.setNome(body.get("nome"));
+        novo.setEmail(email);
+        novo.setSenhaCriptografada(body.get("senha"));
+        novo.setPapel("USER");
+        novo.setCriadoEm(java.time.LocalDateTime.now());
+
+        Usuario salvo = usuarioService.salvar(novo);
+        salvo.setSenhaCriptografada(null);
+        return ResponseEntity.ok(salvo);
     }
 }
